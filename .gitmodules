@@ -1,0 +1,3 @@
+[submodule "lib/ktapi"]
+	path = lib/ktapi
+	url = git@github.com:125m125/ktapi-js.git

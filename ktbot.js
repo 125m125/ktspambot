@@ -61,7 +61,7 @@
     function start() {
         setTimeout(function () {
             nextIteration();
-            interval = 15;
+            interval = 60;
             setInterval(function () {
                 nextIteration();
             }, interval * 1000);

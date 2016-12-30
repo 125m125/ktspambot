@@ -1,23 +1,11 @@
 /*jslint nomen: true */
-/*global console, $, kt */
+/*global console, $, Kt */
 ;
 (function () {
     "use strict";
     var server = "https://kt.125m125.de/",
         users = [
-            {
-                uid: "5",
-                tid: "5",
-                tkn: "5"
-            }, {
-                uid: "8",
-                tid: "8",
-                tkn: "8"
-            }, {
-                uid: "9",
-                tid: "9",
-                tkn: "9"
-            }
+            new Kt("5", "5", "5"), new Kt("8", "8", "8"), new Kt("9", "9", "9")
         ],
         interval = 0,
         tradesPerIteration = -1;
@@ -37,10 +25,10 @@
         }
     }
 
-    function doTrade(item, buysell, amount) {
-        kt.getPrice(item.id, function (suggestion) {
+    function doTrade(user, item, buysell, amount) {
+        user.getPrice(item.id, function (suggestion) {
             var price = suggestion * (0.9 + Math.random() * 0.2);
-            kt.createTrade(buysell, item.id, amount, price.toFixed(2), function (result) {
+            user.createTrade(buysell, item.id, amount, price.toFixed(2), function (result) {
                 var jsonResult = JSON.parse(result.response);
                 $("body").prepend($("<p>").text(new Date() + " - " + (buysell ? "buy" : "sell") + " " + amount + "*" + item.name + " for " + price.toFixed(2) + " -> " + (jsonResult.success ? "success" : jsonResult.message)));
                 console.log(result);
@@ -48,29 +36,27 @@
         });
     }
 
-    function createTrade(buysell, item, amount, trades) {
+    function createTrade(user, buysell, item, amount, trades) {
         var asyncCall = false;
         trades.forEach(function (entry) {
             if (entry.materialId === item.id && buysell === (entry.buy === "true")) {
                 asyncCall = true;
-                kt.cancelTrade(entry, function () {
-                    kt.takeout(entry, function () {
-                        doTrade(item, buysell, amount);
+                user.cancelTrade(entry, function () {
+                    user.takeout(entry, function () {
+                        doTrade(user, item, buysell, amount);
                     });
                 });
             }
         });
         if (!asyncCall) {
-            doTrade(item, buysell, amount);
+            doTrade(user, item, buysell, amount);
         }
     }
 
     function nextIteration() {
         var user = users[Math.floor(Math.random() * users.length)];
-        kt.setUser(user.uid, user.tid, user.tkn);
-        kt.getItems(function (items) {
-
-            kt.getTrades(function (trades) {
+        user.getItems(function (items) {
+            user.getTrades(function (trades) {
                 var i, tries, item, amount, buysell;
                 for (i = 0; i < tradesPerIteration; i += 1) {
                     item = items[Math.floor(Math.random() * items.length)];
@@ -83,7 +69,7 @@
                         amount = Math.floor(Math.random() * 1000);
                         tries += 1;
                     }
-                    createTrade(buysell, item, amount, trades);
+                    createTrade(user, buysell, item, amount, trades);
                 }
             });
         });

@@ -26,8 +26,9 @@
     }
 
     function doTrade(user, item, buysell, amount) {
-        user.getPrice(item.id, function (suggestion) {
-            var price = suggestion * (0.9 + Math.random() * 0.2);
+        user.getRecommendedPrice(item.id, buysell, function (suggestion) {
+            var add = 0.9 + 0.05 * (buysell ? 1 : -1),
+                price = suggestion * (add + Math.random() * 0.2);
             user.createTrade(buysell, item.id, amount, price.toFixed(2), function (result) {
                 var jsonResult = JSON.parse(result.response);
                 $("body").prepend($("<p>").text(new Date() + " - " + (buysell ? "buy" : "sell") + " " + amount + "*" + item.name + " for " + price.toFixed(2) + " -> " + (jsonResult.success ? "success" : jsonResult.message)));

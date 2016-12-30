@@ -32,27 +32,42 @@
         });
     }
 
+    function createTrade(buysell, item, amount, trades) {
+        var asyncCall = false;
+        trades.forEach(function (entry) {
+            if (entry.materialId === item.id && buysell === (entry.buy === "true")) {
+                asyncCall = true;
+                kt.cancelTrade(entry, function () {
+                    kt.takeout(entry, function () {
+                        doTrade(item, buysell, amount);
+                    });
+                });
+            }
+        });
+        if (!asyncCall) {
+            doTrade(item, buysell, amount);
+        }
+    }
+
     function nextIteration() {
-        var asyncCall = false,
-            user = users[Math.floor(Math.random() * users.length)];
+        var user = users[Math.floor(Math.random() * users.length)];
         kt.setUser(user.uid, user.tid, user.tkn);
         kt.getItems(function (items) {
-            var item = items[Math.floor(Math.random() * items.length)],
-                amount = Math.floor(Math.random() * 1000),
-                buysell = Math.random() >= 0.5;
+
             kt.getTrades(function (trades) {
-                trades.forEach(function (entry) {
-                    if (entry.materialId === item.id && buysell === (entry.buy === "true")) {
-                        asyncCall = true;
-                        kt.cancelTrade(entry, function () {
-                            kt.takeout(entry, function () {
-                                doTrade(item, buysell, amount);
-                            });
-                        });
+                var i, tries, item, amount, buysell;
+                for (i = 0; i < 2; i += 1) {
+                    item = items[Math.floor(Math.random() * items.length)];
+                    amount = Math.floor(Math.random() * 1000);
+                    buysell = Math.random() >= 0.5;
+                    tries = 0;
+                    while (tries < 3 && (item.id === "-1" || (!buysell && item.amount < amount))) {
+                        console.log("retry", item, amount);
+                        item = items[Math.floor(Math.random() * items.length)];
+                        amount = Math.floor(Math.random() * 1000);
+                        tries += 1;
                     }
-                });
-                if (!asyncCall) {
-                    doTrade(item, buysell, amount);
+                    createTrade(buysell, item, amount, trades);
                 }
             });
         });
@@ -74,7 +89,7 @@
         if (interval === 60) {
             interval = 0;
         }
-        start();
-        // nextIteration();
+        // start();
+        nextIteration();
     });
 }());

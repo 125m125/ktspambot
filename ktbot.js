@@ -19,7 +19,8 @@
                 tkn: "9"
             }
         ],
-        interval = 0;
+        interval = 0,
+        tradesPerIteration = -1;
 
     function getUrlParameter(sParam) {
         var sPageURL = decodeURIComponent(window.location.search.substring(1)),
@@ -71,7 +72,7 @@
 
             kt.getTrades(function (trades) {
                 var i, tries, item, amount, buysell;
-                for (i = 0; i < 2; i += 1) {
+                for (i = 0; i < tradesPerIteration; i += 1) {
                     item = items[Math.floor(Math.random() * items.length)];
                     amount = Math.floor(Math.random() * 1000);
                     buysell = Math.random() >= 0.5;
@@ -99,12 +100,11 @@
     }
 
     document.addEventListener("DOMContentLoaded", function (event) {
+        tradesPerIteration = getUrlParameter("amount") || 1;
         var time = new Date();
         interval = 60 - time.getSeconds();
-        if (interval === 60) {
-            interval = 0;
-        }
-        // start();
-        nextIteration();
+        interval %= getUrlParameter("delay") || 60;
+        start();
+        // nextIteration();
     });
 }());

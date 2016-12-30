@@ -21,6 +21,21 @@
         ],
         interval = 0;
 
+    function getUrlParameter(sParam) {
+        var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+            sURLVariables = sPageURL.split('&'),
+            sParameterName,
+            i;
+
+        for (i = 0; i < sURLVariables.length; i += 1) {
+            sParameterName = sURLVariables[i].split('=');
+
+            if (sParameterName[0] === sParam) {
+                return sParameterName[1] === undefined ? true : sParameterName[1];
+            }
+        }
+    }
+
     function doTrade(item, buysell, amount) {
         kt.getPrice(item.id, function (suggestion) {
             var price = suggestion * (0.9 + Math.random() * 0.2);
@@ -76,7 +91,7 @@
     function start() {
         setTimeout(function () {
             nextIteration();
-            interval = 60;
+            interval = getUrlParameter("delay") || 60;
             setInterval(function () {
                 nextIteration();
             }, interval * 1000);

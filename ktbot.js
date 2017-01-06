@@ -5,7 +5,7 @@
     "use strict";
     var server = "https://kt.125m125.de/",
         users = [
-            new Kt("5", "5", "5"), new Kt("8", "8", "8"), new Kt("9", "9", "9")
+            new Kt("2", "2", "2"), new Kt("3", "3", "3"), new Kt("4", "4", "4"), new Kt("5", "5", "5"), new Kt("6", "6", "6"), new Kt("7", "7", "7"), new Kt("8", "8", "8"), new Kt("9", "9", "9")
         ],
         interval = 0,
         tradesPerIteration = -1;
@@ -27,10 +27,21 @@
 
     function doTrade(user, item, buysell, amount) {
         user.getRecommendedPrice(item.id, buysell, function (suggestion) {
-            var add = 0.9 + 0.05 * (buysell ? 1 : -1),
-                price = suggestion * (add + Math.random() * 0.2);
+            var price, start, end;
+            if (suggestion < 0) {
+                suggestion = 10;
+            }
+            if (buysell) {
+                start = 0.95;
+                end = 1 / 0.85;
+            } else {
+                start = 0.85;
+                end = 1 / 0.95;
+            }
+            price = (start + Math.random() * (end - start)) * suggestion;
             user.createTrade(buysell, item.id, amount, price.toFixed(2), function (result) {
                 var jsonResult = JSON.parse(result.response);
+                $("body p:gt(50)").remove();
                 $("body").prepend($("<p>").text(new Date() + " - " + (buysell ? "buy" : "sell") + " " + amount + "*" + item.name + " for " + price.toFixed(2) + " -> " + (jsonResult.success ? "success" : jsonResult.message)));
                 console.log(result);
             });

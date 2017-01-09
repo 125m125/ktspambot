@@ -39,11 +39,16 @@
                 end = 1 / 0.95;
             }
             price = (start + Math.random() * (end - start)) * suggestion;
-            user.createTrade(buysell, item.id, amount, price.toFixed(2), function (result) {
-                var jsonResult = JSON.parse(result.response);
-                $("body p:gt(50)").remove();
-                $("body").prepend($("<p>").text(new Date() + " - " + (buysell ? "buy" : "sell") + " " + amount + "*" + item.name + " for " + price.toFixed(2) + " -> " + (jsonResult.success ? "success" : jsonResult.message)));
-                console.log(result);
+            user.getPrice(item.id, function (historyPrice) {
+                console.log("before limit", price);
+                price = Math.min(historyPrice * 1.5, Math.max(historyPrice * 0.5, price));
+                console.log("after limit", price);
+                user.createTrade(buysell, item.id, amount, price.toFixed(2), function (result) {
+                    var jsonResult = JSON.parse(result.response);
+                    $("body p:gt(50)").remove();
+                    $("body").prepend($("<p>").text(new Date() + " - " + (buysell ? "buy" : "sell") + " " + amount + "*" + item.name + " for " + price.toFixed(2) + " -> " + (jsonResult.success ? "success" : jsonResult.message)));
+                    console.log(result);
+                });
             });
         });
     }

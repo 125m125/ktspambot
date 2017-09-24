@@ -26,7 +26,7 @@
     }
 
     function doTrade(user, item, buysell, amount) {
-        user.getRecommendedPrice(item.id, buysell, function (suggestion) {
+        getRecommendedPrice(user, item.id, buysell, function (err, suggestion) {
             var price, start, end;
             if (suggestion < 0) {
                 suggestion = 10;
@@ -39,17 +39,31 @@
                 end = 1 / 0.95;
             }
             price = (start + Math.random() * (end - start)) * suggestion;
-            user.getPrice(item.id, function (historyPrice) {
-                console.log("before limit", price);
-                price = Math.min(historyPrice * 1.5, Math.max(historyPrice * 0.5, price));
-                console.log("after limit", price);
-                user.createTrade(buysell, item.id, amount, price.toFixed(2), function (result) {
-                    var jsonResult = JSON.parse(result.response);
+            user.getHistory(item.id, 1, 0, function (err, historyPrice) {
+                if (historyPrice.length)
+                    price = Math.min(historyPrice[0].close * 1.5, Math.max(historyPrice[0].close * 0.5, price));
+                user.createTrade(buysell, item.id, amount, price.toFixed(2), function (error, result) {
                     $("body p:gt(50)").remove();
-                    $("body").prepend($("<p>").text(new Date() + " - " + (buysell ? "buy" : "sell") + " " + amount + "*" + item.name + " for " + price.toFixed(2) + " -> " + (jsonResult.success ? "success" : jsonResult.message)));
-                    console.log(result);
+                    $("body").prepend($("<p>").text(new Date() + " - " + (buysell ? "buy" : "sell") + " " + amount + "*" + item.name + " for " + price.toFixed(2) + " -> " + (result.success ? "success" : result.message)));
                 });
             });
+        });
+    }
+
+    function getRecommendedPrice(user, itemid, buysell, callback) {
+        user.getOrderbook(itemid, 1, false, buysell ? "buy" : "sell", function (err, result) {
+            if (err) callback(err);
+            if (result.length) {
+                callback(false, result[0].price);
+            } else {
+                user.getHistory(itemid, 1, 0, function (err, data) {
+                    if (data.length > 0) {
+                        callback(false, data[0].close);
+                    } else {
+                        callback(false, -1);
+                    }
+                });
+            }
         });
     }
 
@@ -59,7 +73,7 @@
             if (entry.materialId === item.id && buysell === (entry.buy === "true")) {
                 asyncCall = true;
                 user.cancelTrade(entry, function () {
-                    user.takeout(entry, function () {
+                    user.takeoutTrade(entry, function () {
                         doTrade(user, item, buysell, amount);
                     });
                 });
@@ -72,8 +86,8 @@
 
     function nextIteration() {
         var user = users[Math.floor(Math.random() * users.length)];
-        user.getItems(function (items) {
-            user.getTrades(function (trades) {
+        user.getItems(function (err, items) {
+            user.getTrades(function (err, trades) {
                 var i, tries, item, amount, buysell;
                 for (i = 0; i < tradesPerIteration; i += 1) {
                     item = items[Math.floor(Math.random() * items.length)];
@@ -81,7 +95,6 @@
                     buysell = Math.random() >= 0.5;
                     tries = 0;
                     while (tries < 3 && (item.id === "-1" || (!buysell && item.amount < amount))) {
-                        console.log("retry", item, amount);
                         item = items[Math.floor(Math.random() * items.length)];
                         amount = Math.floor(Math.random() * 1000);
                         tries += 1;
@@ -108,6 +121,6 @@
         interval = 60 - time.getSeconds();
         interval %= getUrlParameter("delay") || 60;
         start();
-        // nextIteration();
+        nextIteration();
     });
 }());
